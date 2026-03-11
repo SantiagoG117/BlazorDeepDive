@@ -1,0 +1,114 @@
+﻿@page "/servers"
+
+@*
+    Sets the render mode for the entire component tree rooted at the /servers page
+    All child components inherit the parent's render mode automatically
+*@
+@rendermode InteractiveServer 
+
+@inject NavigationManager NavigationManager
+
+<!--Cities Card-->
+<h3>Cities</h3>
+<div class="d-flex flex-wrap">
+@foreach(var city in cities)
+{
+    <button type="button"
+            class="border-0 bg-transparent p-0"
+            @onclick="() => FilterByCity(city)">
+        <div class="card align-items-center me-1 mb-1 @(selectedCity == city ? "border-primary border-2" : "")" style="width:120px; cursor:pointer;">
+            <img src="images/@(city.ToLower()).png" class="card-img-top p-2" alt="@city" style="height:80px; object-fit:contain;" />
+            <div class="card-body p-2">
+                <h6 class="card-title text-center mb-0">@city</h6>
+            </div>
+        </div>
+    </button>
+}
+
+<!--Add City Card-->
+<a href="/servers/add" class="text-decoration-none text-dark">
+    <div class="card d-inline-flex align-items-center me-1 mb-1" style="width:120px; cursor:pointer;">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' fill='%230d6efd' viewBox='0 0 16 16'%3E%3Cpath d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16'/%3E%3Cpath d='M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4'/%3E%3C/svg%3E"
+             class="card-img-top p-2" alt="Add Server" style="height:80px; object-fit:contain;" />
+        <div class="card-body p-2">
+            <h6 class="card-title text-center mb-0">Add Server</h6>
+        </div>
+    </div>
+</a>
+</div>
+
+<br/>
+
+<!--Search bar -->
+<div class="mb-3">
+    <input
+        type="text"
+        class="form-control"
+        placeholder="Search server by name..."
+        @bind="searchFilter"
+        @bind:event="oninput"
+        @bind:after="HandleSearch"
+    />
+</div>
+
+
+<!--Servers List by City-->
+<h3>Servers</h3>
+<ul>
+@foreach(var server in servers)
+{
+    <ServerComponent @key="server.Id" Server="server" OnServerChanged="RefreshServers"/>
+}
+</ul>
+
+
+@code {
+    //Properties
+    private List<Server> servers = [];
+    private List<string> cities = [];
+    private string? selectedCity;
+    private string? searchFilter;
+
+    // Initialize the server and cities after the component is created.
+    protected override void OnInitialized()
+    {
+        servers = ServersRepository.GetServers();
+        cities = CitiesRepository.GetCities();
+
+    }
+
+
+    private void FilterByCity(string city)
+    {
+        selectedCity = selectedCity == city ? null : city;
+
+        // If a city was selected via form POST, filter by that city. Otherwise show all servers
+        servers = string.IsNullOrEmpty(selectedCity)
+                ? ServersRepository.GetServers()
+                : ServersRepository.GetServersByCity(selectedCity);
+    }
+
+    private void HandleSearch()
+    {
+        //Clear the city filter when searching
+        selectedCity = null;
+
+        servers = string.IsNullOrEmpty(searchFilter)
+                    ? ServersRepository.GetServers()
+                    : ServersRepository.SearchServers(searchFilter);
+
+    }
+
+    //Callback function after interactivity
+    private void RefreshServers()
+    {
+        // If a search filter value still exists
+        if (!string.IsNullOrEmpty(searchFilter))
+            servers = ServersRepository.SearchServers(searchFilter);
+        // If a city is still selected
+        else if (!string.IsNullOrEmpty(selectedCity))
+            servers = ServersRepository.GetServersByCity(selectedCity);
+        else
+            servers = ServersRepository.GetServers();
+    }
+}

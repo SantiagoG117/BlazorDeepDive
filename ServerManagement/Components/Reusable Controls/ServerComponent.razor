@@ -1,0 +1,70 @@
+﻿@using System.Threading.Tasks
+@*Reusable components do not need @page. They act like a partial view*@
+
+<li class="mb-1 d-flex align-items-center gap-2">
+    @*Edit server*@
+    <span>
+        @Server.Name is in @Server.City and is 
+        <span class="@(Server.IsOnline ? "text-success" : "text-danger")">
+            @(Server.IsOnline ? "Online" : "Offline")
+        </span>
+    </span>
+    <a href="/server/@Server.Id" class="btn btn-link btn-sm">Edit</a>
+
+    @*Toggle status*@
+    <button 
+        type="button"
+        class="btn btn-sm @(Server.IsOnline ? "btn-warning" : "btn-success")"
+        @onclick="HandleToggleServer"
+    >
+        @(Server.IsOnline ? "Turn Off" : "Turn On")
+    </button>
+
+    @*Delete Server*@   
+    <button 
+        type="button" 
+        class="btn btn-danger btn-sm"
+        @onclick="HandleDeleteServer"
+    >Delete
+    </button>
+
+</li>
+
+
+
+@code {
+    /*
+     * [Parameter] annotation:
+     *      Makes this property settable from a parent component. 
+     *      This is how Blazor proecess data downward from a Parent component to a child
+     *      This annotation makes this non-routable component reusable
+     * 
+     * public:
+     *      Makes the property accessible from the outside
+     * 
+     * required:
+     *      Forces the parent component to always provide a value
+     */
+    [Parameter]
+    public required Server Server { get; set; }
+
+    /*
+     * EventCallBack allows the child component to notify the partent component that something changed,
+     * so the parent component can refresh its data
+     */
+    [Parameter]
+    public EventCallback OnServerChanged { get; set; }
+
+    private async Task HandleDeleteServer()
+    {
+        ServersRepository.DeleteServer(Server.Id);
+        await OnServerChanged.InvokeAsync();
+    }
+
+    private async Task HandleToggleServer()
+    {
+        ServersRepository.ToggleServer(Server.Id);
+        await OnServerChanged.InvokeAsync();
+    }
+}
+
