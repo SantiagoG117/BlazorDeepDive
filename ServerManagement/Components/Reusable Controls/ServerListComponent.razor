@@ -1,0 +1,26 @@
+﻿@using ServerManagement.Components.Reusable_Controls.Templated_Components
+
+<RepeaterTemplate Items="ServerList ?? new()" ListTitle="@ListTitle">
+    <TableHeader>
+        <th>Name</th>
+        <th>City</th>
+        <th>Status</th>
+        <th>People</th>
+        <th>Actions</th>
+    </TableHeader>
+    <RepeatableRow Context="server">
+        <ServerComponent @key="server.Id" Server="server" OnServerChanged="OnServerChanged" />
+    </RepeatableRow>
+</RepeaterTemplate>
+
+
+@code {
+
+    // Parameters
+    [Parameter]
+    public required string ListTitle { get; set; }
+    [Parameter]
+    public List<Server>? ServerList { get; set; }
+    [Parameter]
+    public EventCallback OnServerChanged { get; set; }
+}

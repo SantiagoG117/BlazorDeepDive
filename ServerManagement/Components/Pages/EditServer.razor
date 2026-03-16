@@ -1,4 +1,5 @@
 ﻿@page "/server/{serverId:int}"
+@using ServerManagement.Components.Reusable_Controls.Templated_Components
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 
@@ -6,26 +7,22 @@
 @if (server is not null)
 {
     <EditForm Model="server" OnValidSubmit="HandleSubmit">
-        <!--Validation -->
+        <!-- Validation -->
         <DataAnnotationsValidator/>
         <ValidationSummary/>
 
-        <div class="mb-3">
-            <label class="form-label">Name</label>
-            <InputText @bind-Value="server.Name" class="form-control"/>
-            <ValidationMessage For="() => server.Name"/>
-        </div>
+        <InputFieldTemplate Label="Name" ValidationFor="() => server.Name">
+            <InputText @bind-Value="server.Name" class="form-control input-width"/>
+        </InputFieldTemplate> 
 
-        <div class="mb-3">
-            <label class="form-label">City</label>
-            <InputText @bind-Value="server.City" class="form-control"/>
-            <ValidationMessage For="() => server.City"/>
-        </div>
+        <InputFieldTemplate Label="City" ValidationFor="() => server.City">
+            <InputText @bind-Value="server.City" class="form-control input-width" />
+        </InputFieldTemplate>
+
+        <InputFieldTemplate Label="Online" IsCheckbox="true">
+            <InputCheckbox @bind-Value="server.IsOnline" class="form-check-input" />
+        </InputFieldTemplate>
         
-        <div class="mb-3">
-            <InputCheckbox @bind-Value="server.IsOnline" class="form-check-input"/>
-            <label class="form-check-label">Online</label>
-        </div>
 
         <button type="submit" class="btn btn-primary">Save</button>
         <a href="/servers" class="btn btn-secondary">Cancel</a>

@@ -1,0 +1,96 @@
+﻿@page "/servers"
+
+@*
+    Sets the render mode for the entire component tree rooted at the /servers page
+    All child components inherit the parent's render mode automatically
+*@
+@rendermode InteractiveServer 
+
+@inject NavigationManager NavigationManager
+
+<!--Cities Lists-->
+<CityListComponent 
+    CityList="cities"
+    OnCitySelected="HandleFilterByCity" 
+    SelectedCity="@selectedCity"
+/>
+
+<br/>
+
+<!--Search bar -->
+<SearchBarComponent 
+    OnSearchFilter="HandleSearchFilter"
+    SearchFilter="@searchFilter"
+/>
+
+
+<!--Servers List-->
+<CascadingValue Value="selectedCity" Name="SelectedCity">
+    <ServerListComponent 
+        ListTitle="Servers" 
+        ServerList="servers" 
+        OnServerChanged="RefreshServers"
+    />
+</CascadingValue>
+
+
+
+@code {
+
+    //Properties
+    private List<Server> servers = [];
+    private List<string> cities = [];
+    private string? selectedCity;
+    private string? searchFilter;
+
+    // Initialize the server and cities after the component is created.
+    protected override void OnInitialized()
+    {
+        servers = ServersRepository.GetServers();
+        cities = CitiesRepository.GetCities();
+
+    }
+
+
+    private void HandleFilterByCity(string city)
+    {
+        //Clear up search bar
+        searchFilter = null;
+
+        //Set the value of the selectedCity property
+        selectedCity = string.IsNullOrEmpty(city) ? null : city;
+
+        
+        // If a city was selected via form POST, filter by that city. Otherwise show all servers
+        servers = string.IsNullOrEmpty(selectedCity)
+                ? ServersRepository.GetServers()
+                : ServersRepository.GetServersByCity(selectedCity);
+    }
+
+    private void HandleSearchFilter(string filter)
+    {
+        //Clear the city filter when searching
+        selectedCity = null;
+
+        //Set the value of the searchFilter property
+        searchFilter = filter;
+
+        servers = string.IsNullOrEmpty(filter)
+                    ? ServersRepository.GetServers()
+                    : ServersRepository.SearchServers(filter);
+
+    }
+
+    //Callback function after interactivity
+    private void RefreshServers()
+    {
+        // If a search filter value still exists
+        if (!string.IsNullOrEmpty(searchFilter))
+            servers = ServersRepository.SearchServers(searchFilter);
+        // If a city is still selected
+        else if (!string.IsNullOrEmpty(selectedCity))
+            servers = ServersRepository.GetServersByCity(selectedCity);
+        else
+            servers = ServersRepository.GetServers();
+    }
+}

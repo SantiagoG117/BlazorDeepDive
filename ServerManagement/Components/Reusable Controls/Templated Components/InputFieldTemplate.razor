@@ -1,0 +1,49 @@
+﻿
+
+@if (IsCheckbox)
+{
+    @* Checkbox Layout *@
+    <div class="mb-3 form-check">
+        <!--Input component placeholder-->
+        @ChildContent
+
+        <label class="form-check-label">@Label</label>
+    </div>
+}
+else
+{
+    @* Standard Layout (Text, Select, etc.) *@
+    <div class="mb-3">
+        <label class="form-label">@Label</label>
+
+        <!--Input component placeholder-->
+        @ChildContent
+
+        <!--Optional validation-->
+        @if (ValidationFor is not null)
+        {
+            <ValidationMessage For="@ValidationFor" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public required string Label { get; set; }
+
+    /*
+     * By Naming this Parameter 'ChildContent', Blazor allows us to place the HTML 
+     * directly between <FieldTemplate>...</FieldTemplate>
+     */
+    [Parameter]
+    public required RenderFragment ChildContent { get; set; }
+    
+    [Parameter]
+    public System.Linq.Expressions.Expression<Func<string>>? ValidationFor { get; set; }
+
+    /*
+     * Determines whether to render the input using the checkbox layout
+     */
+    [Parameter]
+    public bool IsCheckbox { get; set; } = false;
+}

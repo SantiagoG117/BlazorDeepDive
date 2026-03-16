@@ -1,0 +1,10 @@
+﻿<button type="submit" @attributes="AdditionalAttributes">
+    @ButtonText
+</button>
+
+@code {
+    [Parameter]
+    public string ButtonText { get; set; } = "Submit";
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string,object>? AdditionalAttributes { get; set; }
+}

@@ -1,0 +1,57 @@
+﻿<h3>Cities</h3>
+<div class="d-flex flex-wrap">
+    @if(CityList is null)
+    {
+        <p class="text-muted">No cities available.</p>
+    }
+    else
+    {
+        @foreach (var city in CityList)
+        {
+            <button type="button"
+                    class="border-0 bg-transparent p-0"
+                    @onclick="() => FilterByCity(city)">
+                <div class="card align-items-center me-1 mb-1 @(SelectedCity == city ? "border-primary border-2" : "")" style="width:120px; cursor:pointer;">
+                    <img src="images/@(city.ToLower()).png" class="card-img-top p-2" alt="@city" style="height:80px; object-fit:contain;" />
+                    <div class="card-body p-2">
+                        <h6 class="card-title text-center mb-0">@city</h6>
+                    </div>
+                </div>
+            </button>
+        }
+
+        <!--Add City Card-->
+        <a href="/servers/add" class="text-decoration-none text-dark">
+            <div class="card d-inline-flex align-items-center me-1 mb-1" style="width:120px; cursor:pointer;">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' fill='%230d6efd' viewBox='0 0 16 16'%3E%3Cpath d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16'/%3E%3Cpath d='M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4'/%3E%3C/svg%3E"
+                     class="card-img-top p-2" alt="Add Server" style="height:80px; object-fit:contain;" />
+                <div class="card-body p-2">
+                    <h6 class="card-title text-center mb-0">Add Server</h6>
+                </div>
+            </div>
+        </a>
+    }
+
+</div>
+
+@code {
+
+    //Parameters: Parent controls their value
+    [Parameter] 
+    public required List<string> CityList { get; set; }
+    // Carries a string payload representing the selected city name that is send back to the parent
+    [Parameter]
+    public EventCallback<string> OnCitySelected { get; set; }
+    [Parameter]
+    public string? SelectedCity { get; set; }
+
+
+    //Event Handlers
+    private async Task FilterByCity(string city)
+    {
+        //Toggle functionality: If already selected send empty to deselect
+        var citySelection = SelectedCity == city ? string.Empty : city;
+        // Report changes on its state to the parent
+        await OnCitySelected.InvokeAsync(citySelection);
+    }
+}

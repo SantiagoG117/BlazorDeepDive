@@ -1,0 +1,55 @@
+﻿@*
+    To provide data to a template component we need to define 3 different things:
+        1. Data type
+        2. Data
+        3. Feed the data to the template
+*@
+
+@*1. Define the generic data type*@
+@typeparam TItem
+
+@if (!string.IsNullOrEmpty(ListTitle))
+{
+    <h3>@(ListTitle)</h3>
+}
+
+@if(Items == null || Items.Count == 0)
+{
+    <p class="text-muted">No items available</p>
+}
+else {
+    <table class="table table-striped">
+        @if (TableHeader != null)
+        {
+            <thead>
+                <tr>
+                    @TableHeader
+                </tr>
+            </thead>
+        }
+        <tbody>
+            <Virtualize Items="this.Items" Context="item">
+                <!--3. Feed Data to the template-->
+                @RepeatableRow(item)
+            </Virtualize>
+        </tbody>
+    </table>
+}
+
+@code {
+    //Parameters
+
+    // 2. Define the data to be passed
+    [Parameter]
+    public required List<TItem> Items { get; set; }
+
+    [Parameter]
+    public RenderFragment? TableHeader { get; set; }
+
+    // UI Definition: Expects a HTML/Razor that takes a single TItem and renders it
+    [Parameter]
+    public required RenderFragment<TItem> RepeatableRow { get; set; }
+
+    [Parameter]
+    public string? ListTitle { get; set; }
+}

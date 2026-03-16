@@ -1,35 +1,48 @@
-﻿@using System.Threading.Tasks
-@*Reusable components do not need @page. They act like a partial view*@
+﻿@*Reusable components do not need @page. They act like a partial view*@
 
-<li class="mb-1 d-flex align-items-center gap-2">
-    @*Edit server*@
-    <span>
-        @Server.Name is in @Server.City and is 
+<tr style="@BackgroundColor">
+    <td>
+        @Server.Name
+    </td>
+    <td>
+        @Server.City
+    </td>
+    <td>
         <span class="@(Server.IsOnline ? "text-success" : "text-danger")">
             @(Server.IsOnline ? "Online" : "Offline")
         </span>
-    </span>
-    <a href="/server/@Server.Id" class="btn btn-link btn-sm">Edit</a>
+    </td>
+    <td>
+        @if (Server.IsOnline)
+        {
+            <text>11</text>
+        }
+        else
+        {
+            <text>-</text>
+        }
+    </td>
+    <td>
+        <a href="/server/@Server.Id" class="btn btn-link btn-sm">Edit</a>
+        
+        @*Toggle status*@
+        <button 
+            type="button"
+            class="btn btn-sm @(Server.IsOnline ? "btn-warning" : "btn-success") ms-1"
+            @onclick="HandleToggleServer"
+        >
+            @(Server.IsOnline ? "Turn Off" : "Turn On")
+        </button>
 
-    @*Toggle status*@
-    <button 
-        type="button"
-        class="btn btn-sm @(Server.IsOnline ? "btn-warning" : "btn-success")"
-        @onclick="HandleToggleServer"
-    >
-        @(Server.IsOnline ? "Turn Off" : "Turn On")
-    </button>
-
-    @*Delete Server*@   
-    <button 
-        type="button" 
-        class="btn btn-danger btn-sm"
-        @onclick="HandleDeleteServer"
-    >Delete
-    </button>
-
-</li>
-
+        @*Delete Server*@   
+        <button 
+            type="button" 
+            class="btn btn-danger btn-sm ms-1"
+            @onclick="HandleDeleteServer"
+        >Delete
+        </button>
+    </td>
+</tr>
 
 
 @code {
@@ -55,6 +68,21 @@
     [Parameter]
     public EventCallback OnServerChanged { get; set; }
 
+    //Cascading Parameters
+    [CascadingParameter(Name = "SelectedCity")]
+    public string? SelectedCity { get; set; }
+
+    //Properties
+    private string BackgroundColor => SelectedCity switch
+    {
+        "Toronto" => "background-color: DodgerBlue;",
+        "Montreal" => "background-color: Gray;",
+        "Ottawa" => "background-color: Green;",
+        "Calgary" => "background-color: Red;",
+        "Halifax" => "background-color: DarkBlue;",
+        _ => "" // Returns empty string for null or unmatched cities
+    };
+    
     private async Task HandleDeleteServer()
     {
         ServersRepository.DeleteServer(Server.Id);
