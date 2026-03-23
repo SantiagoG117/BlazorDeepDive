@@ -1,4 +1,10 @@
-﻿@*Reusable components do not need @page. They act like a partial view*@
+﻿@*
+    Publisher: Injects the Observer into its logic so it can trigger the broadcast
+    event when the IsOnline status change
+*@
+
+@using ServerManagement.State
+@inject ServerStateObserver ServerObserver
 
 <tr style="@BackgroundColor">
     <td>
@@ -82,16 +88,27 @@
         "Halifax" => "background-color: DarkBlue;",
         _ => "" // Returns empty string for null or unmatched cities
     };
-    
+
+    //Event Handlers
     private async Task HandleDeleteServer()
     {
         ServersRepository.DeleteServer(Server.Id);
+
+        //Notify the observer that servers have changed
+        ServerObserver.NotifyServerStateChanged();
+
+        //Notify the parent component that servers have changed
         await OnServerChanged.InvokeAsync();
     }
 
     private async Task HandleToggleServer()
     {
         ServersRepository.ToggleServer(Server.Id);
+
+        //Notify the observer that the status of one of the servers have changed
+        ServerObserver.NotifyServerStateChanged();
+
+        //Notify the parent component that servers have changed
         await OnServerChanged.InvokeAsync();
     }
 }

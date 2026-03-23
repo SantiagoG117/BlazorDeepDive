@@ -1,0 +1,129 @@
+﻿@page "/server/{id:int?}"
+@using ServerManagement.Components.Reusable_Controls.Templated_Components
+@implements IDisposable
+@rendermode InteractiveServer
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+@if (Id.HasValue)
+{
+    <h3>Edit Server</h3>
+}
+else
+{
+    <h3>Create Server</h3> 
+}
+
+<!--In order for NavigationLock to work, the router must be interactive-->
+<NavigationLock
+    ConfirmExternalNavigation="@(editContext?.IsModified()?? false)"
+    OnBeforeInternalNavigation="OnBeforeInternalNavigation"
+/>
+
+@if(Server is not null && editContext is not null)
+{
+    <EditForm EditContext="editContext" OnValidSubmit="HandleSubmit" FormName="ServerForm">
+        <!-- Validation -->
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+        
+        <InputFieldTemplate Label="Name" ValidationFor="() => Server.Name">
+            <InputText @bind-Value="Server.Name" class="form-control input-width"/>
+        </InputFieldTemplate>
+
+        <InputFieldTemplate Label="City" ValidationFor="() => Server.City">
+            <InputText @bind-Value="Server.City" class="form-control input-width" />
+        </InputFieldTemplate>
+
+        <InputFieldTemplate Label="Online" IsCheckbox="true">
+            <InputCheckbox @bind-Value="Server.IsOnline" class="form-check-input" />
+        </InputFieldTemplate>
+
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="/servers" class="btn btn-secondary">Cancel</a>
+
+    </EditForm>
+}
+
+@code {
+    private EditContext? editContext;
+
+    [Parameter]
+    public int? Id { get; set; }
+    [SupplyParameterFromForm]
+    public Server? Server { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (this.Id.HasValue)
+        {
+            if (Server is null || Server.Id != Id.Value)
+                Server = ServersRepository.GetServerById(Id.Value);    
+        }
+        else
+        {
+            //If there is no Id in the route Server has an ID, its leftover state and must be wipped out
+            if (Server is null || Server.Id != 0)
+            {
+                Server = new Server() { IsOnline = false };
+            }
+        }
+
+        //Set the editContext for the current server
+        if (Server is not null && (editContext is null || editContext.Model != Server))
+        {
+            //Unsuscribe from any previous context if it exists
+            if(editContext is not null)
+                editContext.OnFieldChanged -= HandleFieldChanged;
+
+            //If Server was found, re-initialize the EditContext object
+            editContext = new EditContext(Server);
+            /*
+             * Manually re-renders when a field is changed so <NavigationLock> 
+             * re-evaluates ConfirmExternalNavigation and the editContext object
+             */
+            editContext.OnFieldChanged += HandleFieldChanged;
+        }
+
+    }
+
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        if(editContext is not null && editContext.IsModified())
+        {
+            var confirmed = await JS.InvokeAsync<bool>("confirm", "You have unsaved changes. Are you sure you want to leave?");
+            if (!confirmed)
+            {
+                context.PreventNavigation();
+            }
+        }
+    }
+
+    private void HandleSubmit()
+    {
+        if(Server is not null)
+        {
+            if (!Id.HasValue)
+                ServersRepository.AddServer(Server);
+            else
+                ServersRepository.UpdateServer(Server.Id, Server);
+
+            editContext?.MarkAsUnmodified();
+            NavigationManager.NavigateTo($"/servers/back_from/{Server.City}");
+        }
+    }
+
+    // Force a re-render when a field changes so navigation lock updates ConfirmExternalNavigation
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    //Prevents memory leaks left in the EditContext object after the component gets destroyed
+    public void Dispose()
+    {
+        if (editContext is not null)
+            editContext.OnFieldChanged -= HandleFieldChanged;
+    }
+}

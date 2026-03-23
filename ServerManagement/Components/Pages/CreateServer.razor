@@ -2,7 +2,7 @@
 @inject NavigationManager NavigationManager
 
 <h3>CreateServer</h3>
-<EditForm Model="server" OnValidSubmit="HandleSubmit" FormName="CreateServerForm">
+<EditForm Model="Server" OnValidSubmit="HandleSubmit" FormName="CreateServerForm">
     <!--Add Validation-->
     <DataAnnotationsValidator/>
     <ValidationSummary/>
@@ -10,18 +10,18 @@
     <div class="mb-3">
         <div class="mb-3">
             <label class="form-label">Name</label>
-            <InputText @bind-Value="server.Name" class="form-control"/>
-            <ValidationMessage For="() => server.Name" />
+            <InputText @bind-Value="Server.Name" class="form-control"/>
+            <ValidationMessage For="() => Server.Name" />
         </div>
 
         <div class="mb-3">
             <label class="form-label">City</label>
-            <InputText @bind-Value="server.City" class="form-control"/>
-            <ValidationMessage For="() => server.City"/>
+            <InputText @bind-Value="Server.City" class="form-control"/>
+            <ValidationMessage For="() => Server.City"/>
         </div>
 
         <div class="mb-3">
-            <InputCheckbox @bind-Value="server.IsOnline" class="form-check-input" />
+            <InputCheckbox @bind-Value="Server.IsOnline" class="form-check-input" />
             <label class="form-check-label">Online</label>
         </div>
     </div>
@@ -36,13 +36,13 @@
 
     //Binds the data from the HTTP post request to the server property
     [SupplyParameterFromForm(FormName = "CreateServerForm")]
-    public Server? server { get; set; } = new();
+    public Server? Server { get; set; } = new();
 
     private void HandleSubmit()
     {
-        if(server is not null)
-            ServersRepository.AddServer(server);
+        if(Server is not null)
+            ServersRepository.AddServer(Server);
 
-        NavigationManager.NavigateTo("/servers");
+        NavigationManager.NavigateTo($"/servers/back_from/{Server.City}");
     }
 }

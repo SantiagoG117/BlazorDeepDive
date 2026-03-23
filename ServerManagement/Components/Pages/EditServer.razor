@@ -1,12 +1,17 @@
-﻿@page "/server/{serverId:int}"
+﻿@page "/edit-server/{serverId:int}"
 @using ServerManagement.Components.Reusable_Controls.Templated_Components
 @rendermode InteractiveServer
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 <h3>Server Details</h3>
-@if (server is not null)
+@if (server is not null && editContext is not null)
 {
-    <EditForm Model="server" OnValidSubmit="HandleSubmit">
+    <NavigationLock 
+        ConfirmExternalNavigation= "true"
+        OnBeforeInternalNavigation="OnBeforeInternalNavigation"
+     />
+    <EditForm EditContext="editContext" OnValidSubmit="HandleSubmit">
         <!-- Validation -->
         <DataAnnotationsValidator/>
         <ValidationSummary/>
@@ -37,14 +42,55 @@ else
 
 @code {
 
+    // Parameters
     [Parameter]
     public int ServerId { get; set; }
 
+    // Properties
     private Server? server;
+    
+    /*
+     * Acts as a state manager for an <EditForm>, tracking: 
+     *  Validation State: What fields are valid/invalid
+     *  Modification State: What fields have been modified/touched by the user
+     *  Submission State: Whether the form is currently valid and ready for submission
+     */
+    private EditContext? editContext;
 
+    //Life Cycle Events
     protected override void OnParametersSet()
     {
-        server ??= ServersRepository.GetServerById(ServerId);
+        // Re-fetch the server every time the ServerId parameter changes
+        server = ServersRepository.GetServerById(ServerId);
+        
+        // Re-initialize the EditContext if the server was found
+        if (server is not null)
+        {
+            //Creatre a new context object that tracks the state of the fetched server
+            editContext = new EditContext(server);
+        }
+    }
+
+    //Event Handlers
+    /*
+     * Callback function registered as the event handler for internal navigation events
+     * In order to enabled <NavigationLock/> for internal navigation we must make the router
+     * interactive.
+     */
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        // Intercept internal Blazor routing if the form was modified
+        if (editContext is not null && editContext.IsModified())
+        {
+            // Prompt the user using JavaScript
+            var confirmed = await JS.InvokeAsync<bool>("confirm", "You have unsaved changes. Are you sure you want to leave?");
+
+            if (!confirmed)
+            {
+                // Cancel the navigation
+                context.PreventNavigation();
+            }
+        }
     }
 
     private void HandleSubmit()
@@ -52,8 +98,10 @@ else
         if(server is not null)
         {
             ServersRepository.UpdateServer(server.Id, server);
+            // Mark the form as unmodified before initiating the intentional save-redirect
+            // This prevents the NavigationLock from interfering here.
+            editContext?.MarkAsUnmodified();
+            NavigationManager.NavigateTo($"/servers/back_from/{server.City}");
         }
-
-        NavigationManager.NavigateTo("/servers");
     }
 }

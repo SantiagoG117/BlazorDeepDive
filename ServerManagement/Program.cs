@@ -1,10 +1,19 @@
+using Microsoft.EntityFrameworkCore;
 using ServerManagement.Components;
+using ServerManagement.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
+// Add services to the container (Dependency Injection).
+builder.Services.AddDbContextFactory<ServerManagerContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ServerManagement"));
+});
+builder.Services
+    .AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddScoped<ServerManagement.State.ServerStateObserver>();
 
 var app = builder.Build();
 

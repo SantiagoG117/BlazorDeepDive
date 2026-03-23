@@ -1,4 +1,5 @@
 ﻿@page "/servers"
+@page "/servers/back_from/{CityName}"
 
 @*
     Sets the render mode for the entire component tree rooted at the /servers page
@@ -33,8 +34,6 @@
     />
 </CascadingValue>
 
-
-
 @code {
 
     //Properties
@@ -43,15 +42,45 @@
     private string? selectedCity;
     private string? searchFilter;
 
-    // Initialize the server and cities after the component is created.
+    //Parameters
+    [Parameter]
+    public string? CityName { get; set; }
+
+    //Life Cycle events
+    // Initialize the server and cities after the component is created
     protected override void OnInitialized()
     {
-        servers = ServersRepository.GetServers();
-        cities = CitiesRepository.GetCities();
+        base.OnInitialized();
+
+        /*
+        * This guards expensive API calls so they only run once after the interactive 
+         * SingalR Websocket is established and not during initial prerendering. 
+         * Whithout this guard code the expensive repository calls would been
+         * executed twice, once at the prerender phase and again after SignalR websocket
+         * is established
+         */
+
+    if (RendererInfo.IsInteractive)
+        {
+            cities = CitiesRepository.GetCities();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            selectedCity = CityName;
+            searchFilter = null; //Clear the search bar when applyinga route-based city filter
+        }
+
+        // Get the servers
+        RefreshServers();
 
     }
 
-
+    //Event handlers
+    
     private void HandleFilterByCity(string city)
     {
         //Clear up search bar
@@ -60,7 +89,7 @@
         //Set the value of the selectedCity property
         selectedCity = string.IsNullOrEmpty(city) ? null : city;
 
-        
+
         // If a city was selected via form POST, filter by that city. Otherwise show all servers
         servers = string.IsNullOrEmpty(selectedCity)
                 ? ServersRepository.GetServers()

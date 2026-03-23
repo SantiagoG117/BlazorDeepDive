@@ -1,4 +1,13 @@
-﻿<h3>Cities</h3>
+﻿@*
+    Subscriber: Inbjects the Observer into its logic so it can subscribe to its event
+    and trigger a re-render when the event fires
+*@
+@using ServerManagement.State
+@inject ServerStateObserver ServerObserver
+
+@implements IDisposable
+
+<h3>Cities</h3>
 <div class="d-flex flex-wrap">
     @if(CityList is null)
     {
@@ -15,13 +24,18 @@
                     <img src="images/@(city.ToLower()).png" class="card-img-top p-2" alt="@city" style="height:80px; object-fit:contain;" />
                     <div class="card-body p-2">
                         <h6 class="card-title text-center mb-0">@city</h6>
+                        <div class="text-center mt-1">
+                            <span class="badge @(GetOnlineCount(city) > 0 ? "bg-success" : "bg-secondary")">
+                                @GetOnlineCount(city) Online
+                            </span>
+                        </div>
                     </div>
                 </div>
             </button>
         }
 
         <!--Add City Card-->
-        <a href="/servers/add" class="text-decoration-none text-dark">
+        <a href="/server" class="text-decoration-none text-dark">
             <div class="card d-inline-flex align-items-center me-1 mb-1" style="width:120px; cursor:pointer;">
                 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' fill='%230d6efd' viewBox='0 0 16 16'%3E%3Cpath d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16'/%3E%3Cpath d='M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4'/%3E%3C/svg%3E"
                      class="card-img-top p-2" alt="Add Server" style="height:80px; object-fit:contain;" />
@@ -45,13 +59,44 @@
     [Parameter]
     public string? SelectedCity { get; set; }
 
+    //Life cycle events
+    protected override void OnInitialized()
+    {
+        /*
+         * 1. Hooks the component to the Observer's event on Initialization
+         * 2. Registers HandleServerStateChanged as the listener or subscriber to the
+         *    Observer's event  
+         */
+        ServerObserver.OnServerStateChanged += HandleServerStateChanged;
+    }
 
-    //Event Handlers
+    //Force a UI re-render when the event is triggered by a component
+    private void HandleServerStateChanged()
+    {
+        /*
+         * StateHasChanged notifies blazor that the component's state has changed and that
+         * a re render is required
+         */ 
+        InvokeAsync(StateHasChanged);
+    }
+
+    //Helper method to calculate the number of online servers for a specific city
+    private int GetOnlineCount(string cityName)
+    {
+        return ServersRepository.GetServersByCity(cityName).Count(s => s.IsOnline);
+    }
+
     private async Task FilterByCity(string city)
     {
         //Toggle functionality: If already selected send empty to deselect
         var citySelection = SelectedCity == city ? string.Empty : city;
         // Report changes on its state to the parent
         await OnCitySelected.InvokeAsync(citySelection);
+    }
+
+    public void Dispose()
+    {
+        //Unsuscribe to the Observer after the component is destroyed to prevent memory leaks
+        ServerObserver.OnServerStateChanged -= HandleServerStateChanged;
     }
 }
